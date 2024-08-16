@@ -1,0 +1,31 @@
+(cloudflare_dns) {
+	tls {
+		dns cloudflare {env.CF_API_TOKEN}
+	}
+}
+
+{$DOMAIN}, *.{$DOMAIN} {
+	import cloudflare_dns
+	encode zstd gzip
+
+    # host matchher
+	@proxyhostport header_regexp hostport Host ([A-Za-z0-9-]+?)-([0-9]+)\.{$DOMAIN}
+    @proxyhostonly header_regexp hostonly Host ([A-Za-z0-9-]+?)\.{$CODEHOST}
+
+    # proxy host+port, need auth
+	forward_auth @proxyhostport http://sso {
+		uri /api/verify?rd=https://sso.{$DOMAIN}
+		copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+	}
+	reverse_proxy @proxyhostport http://proxy {
+		header_up Host {re.hostport.1}:{re.hostport.2}
+	}
+    
+	# proxy host with default port, bypass auth
+	reverse_proxy @proxyhostonly http://proxy {
+		header_up Host {re.hostonly.1}
+	}
+    
+    # manager
+	reverse_proxy http://ghcode
+}

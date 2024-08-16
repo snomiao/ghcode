@@ -1,0 +1,15 @@
+services:
+  proxy:
+    image: snomiao/bunproxy
+  caddy:
+    image: caddy
+    environment:
+      HOST: comfy.snomiao.dev
+  ghcode:
+    image: snomiao/ghcode
+    environment:
+      CODEBASE: vscode.comfy.snomiao.dev
+  vscode:
+    image: snomiao/ghdev
+    environment:
+      PORT: 80
